@@ -1,0 +1,8 @@
+include:
+  - project: 'distribusion/datahub/gitlab-ci'
+    file: 'python-service.yaml'
+    ref: master
+
+variables:
+  DEV_URL: http://svc.playground.internal.distribusion.com/city-search/docs
+  PROD_URL: http://svc.prod.internal.distribusion.com/city-search/docs

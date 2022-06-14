@@ -1,0 +1,26 @@
+version: '3.5'
+services:
+
+  app:
+    image: local/distribusion/city-search:latest
+    build:
+      context: .
+      # New versions of docker use network "bridge"
+      # This network does not have connection to ourside world
+      # Manually specify host network here
+      # to enable dockers communication with outside world
+      network: host
+      dockerfile: .deploy/docker/Dockerfile
+    ports:
+      # DOCKER_COMPOSE_EXTERNAL_PORT can be specified in .env file
+      - ${DOCKER_COMPOSE_EXTERNAL_PORT-8000}:8000
+    volumes:
+      - ./:/app
+    env_file: # Can be replaced with environment: ...
+      - .env.example
+    command:
+      - uvicorn
+      - --host
+      - 0.0.0.0
+      - --reload
+      - city_search.main:app

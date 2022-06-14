@@ -1,0 +1,38 @@
+---
+
+app:
+  env:
+    API_ROOT_PATH: "/city-search"
+  secretEnv:
+    TEST_ENV_VAR: ref+vault://gitlab/${CI_PROJECT_PATH}/${CI_ENVIRONMENT_NAME}#/TEST_ENV_VAR
+
+ingress:
+  enabled: true
+  annotations:
+    ingress.kubernetes.io/force-ssl-redirect: "false"
+    kubernetes.io/ingress.class: nginx-internal
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    # The same must be specified in .gitlab-ci.yml as dev url
+    - host: svc.prod.internal.distribusion.com
+      paths:
+        - path: "/city-search(/|$)(.*)"
+          type: Prefix
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
