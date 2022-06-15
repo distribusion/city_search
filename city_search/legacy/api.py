@@ -480,7 +480,7 @@ async def get_trips(
     # Assume date in departure city timezone
     try:
         if request.app.state.globals.city_dict is None:
-            raise HTTPException(503, f"City cache not initialized yet")
+            raise HTTPException(503, "City cache not initialized yet")
         departure_city_tz = pytz.timezone(
             request.app.state.globals.city_dict[departure_city].timezone
         )

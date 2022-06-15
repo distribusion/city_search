@@ -11,7 +11,7 @@ authors = ["Artyom Fomenko <artyom.fomenko@distribusion.com>"]
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9, <3.10"
 uvicorn = "*"
 gunicorn = "*"
 fastapi = "*"
