@@ -1,5 +1,4 @@
 {
-	// Install LSP-json to get validation and autocompletion in this file.
-	"venvPath": ".",
-	"venv": ".venv",
+    "venvPath": ".",
+    "venv": ".venv"
 }

@@ -15,6 +15,18 @@ python = "^3.9"
 uvicorn = "*"
 gunicorn = "*"
 fastapi = "*"
+fastapi-utils = "*"
+typer = "*"
+tortoise-orm = "*"
+aerich = "*"
+itsdangerous = "*"
+asyncpg = "*"
+python-slugify = "*"
+aiohttp = "*"
+
+
+[tool.poetry.scripts]
+city-search = 'city_search.cli:app'
 
 
 [tool.poetry.group.test]
