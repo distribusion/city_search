@@ -4,6 +4,7 @@ Server entrypoint with FastAPI app defined
 
 import logging
 import os
+import traceback
 from typing import Any, Dict, List
 
 import aiohttp
@@ -143,100 +144,104 @@ async def get_carrier_name(code: str):
     summary="Update carrier info (also updates ranks and connections)",
 )
 async def carrier_post(code: str, carrier_controls: serde.CarrierControls):
-    updates = set()
-    errors = set()
+    try:
+        updates = set()
+        errors = set()
 
-    carrier_name = await get_carrier_name(code)
-    mdl_carrier, created = await models.Carrier.update_or_create(
-        code=code,
-        defaults=dict(
-            name=carrier_name,
-            supports_return=carrier_controls.supports_return,
-            enabled=carrier_controls.enabled,
-        ),
-    )
-
-    # Get all countries
-    countries = {country.code: country async for country in models.Country.all()}
-
-    cities = dict()
-    n_cities_created = 0
-    async for city in bigquery.get_cities(code):
-
-        try:
-            mdl_country = countries[city.country_code]
-        except KeyError:
-            errors.add(f"Country {city.country_code} not found")
-            continue
-
-        mdl_city, created = await models.City.get_or_create(
-            code=city.code,
-            defaults=dict(timezone=city.timezone, country=mdl_country),
-        )
-
-        cities[mdl_city.code] = mdl_city
-
-        if created:
-            n_cities_created += 1
-            updates.add(f"Created city {city.code} {city.name}")
-            # City name
-            await models.CityName.get_or_create(
-                city=mdl_city, locale="en", defaults=dict(name=city.name)
-            )
-
-    # Update ranks
-
-    n_ranks_updated = 0
-
-    async for city_rank in bigquery.get_city_ranks(code):
-
-        try:
-            mdl_city = cities[city_rank.code]
-        except KeyError:
-            errors.add(f"City {city_rank.code} not found")
-            continue
-
-        await models.CityRank.update_or_create(
-            city=mdl_city,
-            carrier=mdl_carrier,
-            defaults=dict(enabled=True, rank=city_rank.rank),
-        )
-
-        n_ranks_updated += 1
-
-    n_connections_updated = 0
-    async for connection in bigquery.get_connections(code):
-        try:
-            mdl_departure_city = cities[connection.dep_city_cd]
-            errors.add(f"City {connection.dep_city_cd} not found")
-        except KeyError:
-            continue
-
-        try:
-            mdl_arrival_city = cities[connection.arr_city_cd]
-        except KeyError:
-            errors.add(f"City {connection.arr_city_cd} not found")
-            continue
-
-        await models.CityConnection.update_or_create(
-            carrier=mdl_carrier,
-            departure_city=mdl_departure_city,
-            arrival_city=mdl_arrival_city,
+        carrier_name = await get_carrier_name(code)
+        mdl_carrier, created = await models.Carrier.update_or_create(
+            code=code,
             defaults=dict(
-                rank=connection.rank,
+                name=carrier_name,
+                supports_return=carrier_controls.supports_return,
+                enabled=carrier_controls.enabled,
             ),
         )
 
-        n_connections_updated += 1
+        # Get all countries
+        countries = {country.code: country async for country in models.Country.all()}
 
-    return serde.CarrierControlsResponse(
-        success=True,
-        n_cities_created=n_cities_created,
-        n_ranks_updated=n_ranks_updated,
-        n_connections_updated=n_connections_updated,
-        errors=sorted(errors),
-        updates=sorted(updates),
-    )
+        cities = dict()
+        n_cities_created = 0
+        async for city in bigquery.get_cities(code):
+
+            try:
+                mdl_country = countries[city.country_code]
+            except KeyError:
+                errors.add(f"Country {city.country_code} not found")
+                continue
+
+            mdl_city, created = await models.City.get_or_create(
+                code=city.code,
+                defaults=dict(timezone=city.timezone, country=mdl_country),
+            )
+
+            cities[mdl_city.code] = mdl_city
+
+            if created:
+                n_cities_created += 1
+                updates.add(f"Created city {city.code} {city.name}")
+                # City name
+                await models.CityName.get_or_create(
+                    city=mdl_city, locale="en", defaults=dict(name=city.name)
+                )
+
+        # Update ranks
+
+        n_ranks_updated = 0
+
+        async for city_rank in bigquery.get_city_ranks(code):
+
+            try:
+                mdl_city = cities[city_rank.code]
+            except KeyError:
+                errors.add(f"City {city_rank.code} not found")
+                continue
+
+            await models.CityRank.update_or_create(
+                city=mdl_city,
+                carrier=mdl_carrier,
+                defaults=dict(enabled=True, rank=city_rank.rank),
+            )
+
+            n_ranks_updated += 1
+
+        n_connections_updated = 0
+        async for connection in bigquery.get_connections(code):
+            try:
+                mdl_departure_city = cities[connection.dep_city_cd]
+                errors.add(f"City {connection.dep_city_cd} not found")
+            except KeyError:
+                continue
+
+            try:
+                mdl_arrival_city = cities[connection.arr_city_cd]
+            except KeyError:
+                errors.add(f"City {connection.arr_city_cd} not found")
+                continue
+
+            await models.CityConnection.update_or_create(
+                carrier=mdl_carrier,
+                departure_city=mdl_departure_city,
+                arrival_city=mdl_arrival_city,
+                defaults=dict(
+                    rank=connection.rank,
+                ),
+            )
+
+            n_connections_updated += 1
+
+        return serde.CarrierControlsResponse(
+            success=True,
+            n_cities_created=n_cities_created,
+            n_ranks_updated=n_ranks_updated,
+            n_connections_updated=n_connections_updated,
+            errors=sorted(errors),
+            updates=sorted(updates),
+        )
+    except Exception:
+        logger.error(traceback.format_exc())
+        return HTTPException(500, traceback.format_exc())
 
 
 @app.get(
