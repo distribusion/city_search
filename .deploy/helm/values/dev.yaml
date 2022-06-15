@@ -16,6 +16,8 @@ ingress:
     ingress.kubernetes.io/force-ssl-redirect: "false"
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Access-Control-Allow-Origin: *";
   hosts:
     # The same must be specified in .gitlab-ci.yml as dev url
     - host: svc.playground.internal.distribusion.com
