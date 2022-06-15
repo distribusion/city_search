@@ -59,7 +59,7 @@ app.add_middleware(
 
 # Health check endpoint
 @app.get("/health", include_in_schema=False)  # type: ignore
-async def health(request: Request) -> str:
+async def health() -> str:
     """Checks health of application, uncluding database and all systems"""
 
     if getattr(app.state, "globals", None) is None:
