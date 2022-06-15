@@ -1,5 +1,7 @@
 ---
 
+replicaCount: 2
+
 app:
   env:
     API_ROOT_PATH: "/city-search"
