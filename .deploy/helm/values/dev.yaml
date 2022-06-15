@@ -4,7 +4,9 @@ app:
   env:
     API_ROOT_PATH: "/city-search"
   secretEnv:
-    TEST_ENV_VAR: ref+vault://gitlab/${CI_PROJECT_PATH}/${CI_ENVIRONMENT_NAME}#/TEST_ENV_VAR
+    SECRET_KEY: ref+vault://gitlab/${CI_PROJECT_PATH}/${CI_ENVIRONMENT_NAME}#/SECRET_KEY
+    DB_URL: ref+vault://gitlab/${CI_PROJECT_PATH}/${CI_ENVIRONMENT_NAME}#/DB_URL
+    GS_ACCOUNT_KEY: ref+vault://gitlab/${CI_PROJECT_PATH}/${CI_ENVIRONMENT_NAME}#/GS_ACCOUNT_KEY
 
 ingress:
   enabled: true
