@@ -357,17 +357,6 @@ async def update_indexes(app: FastAPI) -> None:
         logger.error(traceback.format_exc())
 
 
-@router.get("/city", tags=["cities"], response_model=CityGetResponse)
-async def city_get(id: str) -> CityGetResponse:
-    return CityGetResponse(
-        title="",
-        label="",
-        group="",
-        rank=0,
-        type="",
-    )
-
-
 def search(index: ItemsIndex, query: str) -> List[CityCode]:
     ngrams = index.ngrams
     keys = index.keys
@@ -396,7 +385,7 @@ def ngram_city_search(
 
 
 @router.get(
-    "/suggestions/cities", tags=["cities"], response_model=CitySuggestionsResponse
+    "/suggestions/cities", tags=["search"], response_model=CitySuggestionsResponse
 )
 async def city_suggestions(
     request: Request,
@@ -447,7 +436,7 @@ async def city_suggestions(
     )
 
 
-@router.get("/trips_prices", tags=["trips"], response_model=TripPricesResponse)
+@router.get("/trips_prices", tags=["search"], response_model=TripPricesResponse)
 async def get_operated_days(
     request: Request, departure_city: str, arrival_city: str, with_return: Optional[str] = None  # type: ignore
 ) -> Dict[str, PriceInfo]:
@@ -459,7 +448,7 @@ async def get_operated_days(
     )
 
 
-@router.get("/trips", tags=["trips"], response_model=TripsResponse)
+@router.get("/trips", tags=["search"], response_model=TripsResponse)
 async def get_trips(
     request: Request,
     departure_city: str,

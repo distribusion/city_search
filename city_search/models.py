@@ -100,3 +100,16 @@ class CityConnection(Model):
     class Meta:
         unique_together = ("carrier", "departure_city", "arrival_city")
         indexes = (("carrier", "departure_city", "arrival_city"),)
+
+
+class CarrierUpdateTask(Model):
+    id = fields.IntField(pk=True, db_index=True, unique=True)
+    code = fields.CharField(max_length=4, null=False)
+    task_code = fields.CharField(max_length=31, null=False, unique=True, db_index=True)
+    started = fields.DatetimeField(null=False)
+    heartbeat = fields.DatetimeField()
+    ended = fields.DatetimeField(null=True)
+    success = fields.BooleanField(null=True)
+    traceback = fields.TextField(null=True)
+    parameters = fields.JSONField(null=False)
+    result = fields.JSONField(null=True)
