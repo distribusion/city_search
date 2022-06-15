@@ -11,7 +11,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi_utils.tasks import repeat_every
+from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.requests import Request
 from tortoise.contrib.fastapi import register_tortoise
 
 from city_search import bigquery, models, serde
@@ -57,8 +59,22 @@ app.add_middleware(
 
 # Health check endpoint
 @app.get("/health", include_in_schema=False)  # type: ignore
-async def health() -> str:
+async def health(request: Request) -> str:
     """Checks health of application, uncluding database and all systems"""
+
+    if getattr(app.state, "globals", None) is None:
+        raise HTTPException(503, "Cache not loaded yet")
+
+    for attribute_name in app.state.globals.__class__.__dict__.keys():
+
+        if attribute_name.startswith("_"):
+            continue
+
+        attribute_val = getattr(app.state.globals, attribute_name, None)
+
+        if attribute_val is None:
+            raise HTTPException(503, f"{attribute_name} not loaded yet")
+
     return "OK"
 
 

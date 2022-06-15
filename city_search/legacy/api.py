@@ -202,7 +202,7 @@ async def update_city_connections(with_return: bool) -> Dict[CityCode, List[City
            arrival_city.code as arrival_city_code,
            sum(departure_city_rank.rank)
             + sum(arrival_city_rank.rank)
-            + coalesce(cityconnection.rank,0) * 100 as rank
+            + coalesce(max(cityconnection.rank),0) * 100 as rank
     from cityconnection
         left join city as departure_city
             on (departure_city.id = departure_city_id)
@@ -219,7 +219,7 @@ async def update_city_connections(with_return: bool) -> Dict[CityCode, List[City
     where departure_city_rank.enabled = True
       and arrival_city_rank.enabled = True
       {supports_return_query}
-    group by 1, 2
+    group by departure_city.code, arrival_city.code
     """
 
     row_number_query = f"""
@@ -227,7 +227,7 @@ async def update_city_connections(with_return: bool) -> Dict[CityCode, List[City
            arrival_city_code,
            rank,
            row_number() over (partition by departure_city_code order by rank desc) as rn
-    from ({sub_query})
+    from ({sub_query}) as subq1
     """
 
     data = await conn.execute_query_dict(
@@ -235,7 +235,7 @@ async def update_city_connections(with_return: bool) -> Dict[CityCode, List[City
         select departure_city_code,
                arrival_city_code,
                rank
-        from ({row_number_query})
+        from ({row_number_query}) as subq2
         where rn < 10
         """
     )
