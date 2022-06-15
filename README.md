@@ -18,6 +18,7 @@ Configuration is done via environment variables:
 and should be set to a unique, unpredictable value.
 - API_ROOT_PATH - path prefix
 - DB_URL - "postgres://<user>:<password>@<host>:<port>/<db_name>" (or sqlite://:memory: for in-memory use)
+- GS_ACCOUNT_KEY - Google cloud base64-encoded service account json key
 
 **(for postgresql in docker-compose)**
 - POSTGRES_DB - postgres db
