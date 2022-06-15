@@ -202,7 +202,7 @@ async def update_city_connections(with_return: bool) -> Dict[CityCode, List[City
            arrival_city.code as arrival_city_code,
            sum(departure_city_rank.rank)
             + sum(arrival_city_rank.rank)
-            + coalesce(cityconnection.rank,0) as rank
+            + coalesce(cityconnection.rank,0) * 100 as rank
     from cityconnection
         left join city as departure_city
             on (departure_city.id = departure_city_id)

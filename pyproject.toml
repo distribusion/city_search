@@ -23,6 +23,9 @@ itsdangerous = "*"
 asyncpg = "*"
 python-slugify = "*"
 aiohttp = "*"
+janus = "*" # Thread-safe asyncio Queues for querying bigquery
+google-cloud-bigquery = "^3.0.1"
+simplejson = '*'
 
 
 [tool.poetry.scripts]

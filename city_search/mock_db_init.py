@@ -1,3 +1,6 @@
+"""
+Loading mock data into database
+"""
 import logging
 from typing import Any, Dict
 
@@ -6,8 +9,8 @@ from city_search import models
 logger = logging.getLogger(__name__)
 
 
-async def create_country(name: str) -> models.Country:
-    country, _ = await models.Country.get_or_create(name=name)
+async def create_country(code: str, name: str) -> models.Country:
+    country, _ = await models.Country.get_or_create(name=name, defaults=dict(code=code))
     return country
 
 
@@ -66,7 +69,7 @@ async def add_city_connection(
 
 
 async def create_test_data():
-    country = await create_country("Great Britain")
+    country = await create_country("GB", "Great Britain")
 
     city1 = await create_city(
         "GBLON",

@@ -6,6 +6,7 @@ import logging
 import os
 from typing import Any, Dict, List
 
+import aiohttp
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -13,7 +14,8 @@ from fastapi_utils.tasks import repeat_every
 from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
-from city_search import models, serde
+from city_search import bigquery, models, serde
+from city_search.legacy.api import MASTERDATA_URL
 from city_search.legacy.api import router as legacy_api
 from city_search.legacy.api import update_indexes
 from city_search.settings import TORTOISE_ORM, settings
@@ -24,7 +26,7 @@ app = FastAPI(root_path=os.environ.get("API_ROOT_PATH", "/"))
 
 
 @app.on_event("startup")
-@repeat_every(seconds=5)  # 1 hour
+@repeat_every(seconds=10 * 60)  # 10 minutes
 async def remove_expired_tokens_task() -> None:
     await update_indexes(app)
 
@@ -79,8 +81,147 @@ async def index() -> Dict[str, str]:
 async def carrier_list():
     rv = list()
     for carrier in await models.Carrier.all():
-        rv.append(serde.Carrier(code=carrier.code, name=carrier.name))
+        rv.append(
+            serde.Carrier(
+                code=carrier.code,
+                name=carrier.name,
+                enabled=carrier.enabled,
+                supports_return=carrier.supports_return,
+            )
+        )
     return rv
+
+
+@app.get(
+    "/carrier/{code}",
+    tags=["data"],
+    response_model=serde.Carrier,
+    summary="Get carrier info by code",
+)
+async def carrier_get(code: str):
+    carrier = await models.Carrier.get(code=code)
+
+    return serde.Carrier(
+        code=carrier.code,
+        name=carrier.name,
+        enabled=carrier.enabled,
+        supports_return=carrier.supports_return,
+    )
+
+
+async def get_carrier_name(code: str):
+    # Get carrier name
+    async with aiohttp.ClientSession(raise_for_status=True) as session:
+        async with session.get(
+            f"{MASTERDATA_URL}/carriers/by_dis_marketing_carrier_codes"
+            + f"?marketing_carrier_codes[]={code}&locale=en"
+        ) as resp:
+            resp.raise_for_status()
+            resp = await resp.json()
+    return resp["data"][0]["attributes"]["trade_name"]
+
+
+@app.post(
+    "/carrier/{code}",
+    tags=["data"],
+    response_model=serde.CarrierControlsResponse,
+    summary="Update carrier info (also updates ranks and connections)",
+)
+async def carrier_post(code: str, carrier_controls: serde.CarrierControls):
+    updates = set()
+    errors = set()
+
+    carrier_name = await get_carrier_name(code)
+    mdl_carrier, created = await models.Carrier.update_or_create(
+        code=code,
+        defaults=dict(
+            name=carrier_name,
+            supports_return=carrier_controls.supports_return,
+            enabled=carrier_controls.enabled,
+        ),
+    )
+
+    # Get all countries
+    countries = {country.code: country async for country in models.Country.all()}
+
+    cities = dict()
+    n_cities_created = 0
+    async for city in bigquery.get_cities(code):
+
+        try:
+            mdl_country = countries[city.country_code]
+        except KeyError:
+            errors.add(f"Country {city.country_code} not found")
+            continue
+
+        mdl_city, created = await models.City.get_or_create(
+            code=city.code,
+            defaults=dict(timezone=city.timezone, country=mdl_country),
+        )
+
+        cities[mdl_city.code] = mdl_city
+
+        if created:
+            n_cities_created += 1
+            updates.add(f"Created city {city.code} {city.name}")
+            # City name
+            await models.CityName.get_or_create(
+                city=mdl_city, locale="en", defaults=dict(name=city.name)
+            )
+
+    # Update ranks
+
+    n_ranks_updated = 0
+
+    async for city_rank in bigquery.get_city_ranks(code):
+
+        try:
+            mdl_city = cities[city_rank.code]
+        except KeyError:
+            errors.add(f"City {city_rank.code} not found")
+            continue
+
+        await models.CityRank.update_or_create(
+            city=mdl_city,
+            carrier=mdl_carrier,
+            defaults=dict(enabled=True, rank=city_rank.rank),
+        )
+
+        n_ranks_updated += 1
+
+    n_connections_updated = 0
+    async for connection in bigquery.get_connections(code):
+        try:
+            mdl_departure_city = cities[connection.dep_city_cd]
+            errors.add(f"City {connection.dep_city_cd} not found")
+        except KeyError:
+            continue
+
+        try:
+            mdl_arrival_city = cities[connection.arr_city_cd]
+        except KeyError:
+            errors.add(f"City {connection.arr_city_cd} not found")
+            continue
+
+        await models.CityConnection.update_or_create(
+            carrier=mdl_carrier,
+            departure_city=mdl_departure_city,
+            arrival_city=mdl_arrival_city,
+            defaults=dict(
+                rank=connection.rank,
+            ),
+        )
+
+        n_connections_updated += 1
+
+    return serde.CarrierControlsResponse(
+        success=True,
+        n_cities_created=n_cities_created,
+        n_ranks_updated=n_ranks_updated,
+        n_connections_updated=n_connections_updated,
+        errors=sorted(errors),
+        updates=sorted(updates),
+    )
 
 
 @app.get(

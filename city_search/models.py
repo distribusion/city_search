@@ -1,5 +1,5 @@
 """
-Models
+Database models
 """
 
 from tortoise import fields
@@ -18,6 +18,7 @@ class Carrier(Model):
 
 class Country(Model):
     id = fields.IntField(pk=True, db_index=True, unique=True)
+    code = fields.CharField(max_length=2, null=False)
     name = fields.CharField(max_length=254, null=False)
     cities: fields.ReverseRelation["City"]
 

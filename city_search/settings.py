@@ -2,7 +2,7 @@
 Settings module for specifying configurable parameters with environment variables
 """
 import logging
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseSettings, SecretStr
 
@@ -29,6 +29,10 @@ class AppSettings(BaseSettings):
 
     db_url: str = "sqlite://db.sqlite"
     db_migrations_location: str = "migrations"
+
+    bq_project: str = "distribusion-bq"
+    bq_location: str = "europe-west3"
+    gs_account_key: Optional[str] = None
 
     class Config:
         validate_assignment = True
