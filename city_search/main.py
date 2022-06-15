@@ -13,7 +13,6 @@ from fastapi.openapi.utils import get_openapi
 from fastapi_utils.tasks import repeat_every
 from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.requests import Request
 from tortoise.contrib.fastapi import register_tortoise
 
 from city_search import bigquery, models, serde
