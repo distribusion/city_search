@@ -466,7 +466,7 @@ async def country_get(code: str, name: str):
 
 
 @app.get(
-    "/city",
+    "/city_list",
     tags=["data"],
     response_model=List[serde.City],
     summary="List cities",

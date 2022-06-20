@@ -258,9 +258,23 @@ async def _destination_city_query(
 async def elastic_request(query):
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         async with session.get(f"{ELASTIC_URL}/trips/_search", json=query) as resp:
-            resp.raise_for_status()
-            resp = await resp.json()
-    return resp
+            try:
+                resp_json = await resp.json()
+            except Exception:
+                resp_json = None
+
+            try:
+                resp.raise_for_status()
+            except Exception:
+                logger.error("Query that raised an error: %s", query)
+                if resp_json is not None:  # Log response if it exists
+                    logger.error(resp_json)
+                raise
+
+    if resp_json is None:
+        raise ValueError("resp_json is None!")
+
+    return resp_json
 
 
 async def elastic_scroll(query, scroll_size="1m"):
@@ -271,8 +285,23 @@ async def elastic_scroll(query, scroll_size="1m"):
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         async with session.get(
             f"{ELASTIC_URL}/trips/_search?scroll={scroll_size}", json=query
-        ) as resp:
-            resp = await resp.json()
+        ) as resp_raw:
+
+            try:
+                resp = await resp_raw.json()
+            except Exception:
+                resp = None
+
+            try:
+                resp_raw.raise_for_status()
+            except Exception:
+                if resp is not None:
+                    logger.error(resp)
+                raise
+
+            if resp is None:
+                raise ValueError("response is None!")
+
         hits_total = resp["hits"]["total"]["value"]
         scroll_id = resp["_scroll_id"]
         hits_fetched = len(resp["hits"]["hits"])

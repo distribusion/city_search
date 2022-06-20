@@ -506,3 +506,17 @@ async def get_trips(
         page_max=page_max,
         page_size=page_size,
     )
+
+
+@router.get("/city", tags=["data"])
+async def city_get(request: Request, id: str) -> dict:
+    city = request.app.state.globals.city_dict.get(id)
+    if city is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {
+        "title": city.title,
+        "label": city.label,
+        "group": city.group,
+        "rank": city.rank,
+        "type": city.type,
+    }
