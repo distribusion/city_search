@@ -298,23 +298,20 @@ async def get_carrier_info() -> Dict[str, CarrierInfo]:
 
 
 async def update_indexes(app: FastAPI) -> None:
-    print_final_msg = False
     try:
-        if getattr(app.state, "globals", None) is None:
-            print_final_msg = True
-            logger.warning("Initializing globals")
-            app.state.globals = Globals(
-                city_dict=None,
-                cities_index_wr=None,
-                cities_top_wr=None,
-                city_connections_wr=None,
-                cities_index_nr=None,
-                cities_top_nr=None,
-                city_connections_nr=None,
-                city_stations=None,
-                station_info=None,
-                carrier_info=None,
-            )
+        logger.info("Filling caches")
+        app.state.globals = Globals(
+            city_dict=None,
+            cities_index_wr=None,
+            cities_top_wr=None,
+            city_connections_wr=None,
+            cities_index_nr=None,
+            cities_top_nr=None,
+            city_connections_nr=None,
+            city_stations=None,
+            station_info=None,
+            carrier_info=None,
+        )
 
         # Used just for getting city info
         city_dict_new = await update_city_dict()
@@ -345,13 +342,12 @@ async def update_indexes(app: FastAPI) -> None:
         app.state.globals.station_info = station_info
         app.state.globals.carrier_info = carrier_info
 
-        if print_final_msg:
-            logger.warning(
-                "Globals initialized. Carriers: %d, Cities: %d, Stations: %d",
-                len(app.state.globals.carrier_info),
-                len(app.state.globals.city_dict),
-                len(app.state.globals.station_info),
-            )
+        logger.warning(
+            "Cache filled. Carriers: %d, Cities: %d, Stations: %d",
+            len(app.state.globals.carrier_info),
+            len(app.state.globals.city_dict),
+            len(app.state.globals.station_info),
+        )
 
     except Exception:
         logger.error(traceback.format_exc())
