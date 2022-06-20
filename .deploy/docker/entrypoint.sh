@@ -15,4 +15,9 @@ echo "Upgrade database"
 city-search --verbose db-upgrade
 
 # Start single gunicorn worker
-gunicorn -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 120 city_search.main:app
+uvicorn city_search.main:app \
+	--host 0.0.0.0 \
+	--port 5000 \
+	--log-level info \
+	--access-log \
+	--no-use-colors
