@@ -440,12 +440,15 @@ async def city_suggestions(
 async def get_operated_days(
     request: Request, departure_city: str, arrival_city: str, with_return: Optional[str] = None  # type: ignore
 ) -> Dict[str, PriceInfo]:
-    with_return: bool = with_return == "true"
-    gacc = GlobalsAccess(request.app.state.globals)
+    try:
+        with_return: bool = with_return == "true"
+        gacc = GlobalsAccess(request.app.state.globals)
 
-    return await city_operated_days(
-        gacc, departure_city, arrival_city, with_return=with_return
-    )
+        return await city_operated_days(
+            gacc, departure_city, arrival_city, with_return=with_return
+        )
+    except Exception:
+        raise HTTPException(500, "Sry, some internal error occured :(") from None
 
 
 @router.get("/trips", tags=["search"], response_model=TripsResponse)
