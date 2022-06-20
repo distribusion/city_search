@@ -17,7 +17,7 @@ city-search --verbose db-upgrade
 # Start single gunicorn worker
 uvicorn city_search.main:app \
 	--host 0.0.0.0 \
-	--port 5000 \
+	--port 8000 \
 	--log-level info \
 	--access-log \
 	--no-use-colors

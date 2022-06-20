@@ -5,7 +5,7 @@ services:
   postgresql:
     restart: on-failure
     image: postgres:14.2
-    container_name: postgresql_cdm
+    container_name: postgresql_city_search
     command:
       - "postgres"
       - "-c"
@@ -18,7 +18,7 @@ services:
 
   app:
     image: local/distribusion/city-search:latest
-    container_name: app_cdm
+    container_name: app_city_search
     build:
       context: .
       dockerfile: .deploy/docker/Dockerfile
