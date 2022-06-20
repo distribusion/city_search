@@ -33,7 +33,7 @@ app = FastAPI(root_path=os.environ.get("API_ROOT_PATH", "/"))
 
 
 @app.on_event("startup")
-@repeat_every(seconds=10 * 60)  # 10 minutes
+@repeat_every(seconds=30 * 60)  # 30 minutes
 async def remove_expired_tokens_task() -> None:
     await update_indexes(app)
 
