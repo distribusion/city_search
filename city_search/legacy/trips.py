@@ -51,7 +51,7 @@ def make_booking_url(
     assert departure_dttm.tzinfo is not None
     assert arrival_dttm.tzinfo is not None
 
-    endpoint = "https://bustickets.distribusion.com/vx/bookings/new"
+    endpoint = "http://www.bustickets-eurolines.ch/vx/bookings/new"
     parameters = {
         "action": "new",
         "arrival_station_code": arrival_station,

@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, List, Union
 
@@ -9,9 +10,14 @@ from fastapi.exceptions import HTTPException
 from city_search.legacy.serde import PriceInfo
 from city_search.legacy.utils import GlobalsAccess
 
-ELASTIC_URL = "http://es.xbus.prod.internal.distribusion.com"
+ELASTIC_URL = os.environ["ES_URL"]
 ELASTIC_SCROLL_SIZE = 1000
 ELASTIC_MAX_SIZE = 10000
+
+if "ES_API_KEY" in os.environ:
+    ELASTIC_HEADERS = {"Authorization": f"Api-Key {os.environ['ES_API_KEY']}"}
+else:
+    ELASTIC_HEADERS = {}
 
 logger = logging.getLogger()
 
@@ -257,7 +263,9 @@ async def _destination_city_query(
 
 async def elastic_request(query):
     async with aiohttp.ClientSession(raise_for_status=True) as session:
-        async with session.get(f"{ELASTIC_URL}/trips/_search", json=query) as resp:
+        async with session.get(
+            f"{ELASTIC_URL}/trips/_search", headers=ELASTIC_HEADERS, json=query
+        ) as resp:
             try:
                 resp_json = await resp.json()
             except Exception:
@@ -284,7 +292,9 @@ async def elastic_scroll(query, scroll_size="1m"):
 
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         async with session.get(
-            f"{ELASTIC_URL}/trips/_search?scroll={scroll_size}", json=query
+            f"{ELASTIC_URL}/trips/_search?scroll={scroll_size}",
+            headers=ELASTIC_HEADERS,
+            json=query,
         ) as resp_raw:
 
             try:

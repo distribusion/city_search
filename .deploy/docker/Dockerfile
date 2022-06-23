@@ -15,7 +15,7 @@ RUN POETRY_VIRTUALENVS_CREATE=false poetry install --no-root
 COPY ./ ./
 
 # Install app
-RUN pip install .
+RUN pip install --no-deps .
 
 COPY .deploy/docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
