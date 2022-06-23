@@ -444,6 +444,7 @@ async def get_operated_days(
             gacc, departure_city, arrival_city, with_return=with_return
         )
     except Exception:
+        logger.error(traceback.format_exc())
         raise HTTPException(500, "Sry, some internal error occured :(") from None
 
 

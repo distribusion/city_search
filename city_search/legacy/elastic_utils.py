@@ -15,9 +15,11 @@ ELASTIC_SCROLL_SIZE = 1000
 ELASTIC_MAX_SIZE = 10000
 
 if "ES_API_KEY" in os.environ:
-    ELASTIC_HEADERS = {"Authorization": f"Api-Key {os.environ['ES_API_KEY']}"}
+    ELASTIC_HEADERS = {"Authorization": f"ApiKey {os.environ['ES_API_KEY']}"}
 else:
     ELASTIC_HEADERS = {}
+
+print(ELASTIC_HEADERS)
 
 logger = logging.getLogger()
 
